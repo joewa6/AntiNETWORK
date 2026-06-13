@@ -14,6 +14,9 @@ def test_feature_families_tags_expected_chemistry_and_regions():
         [
             "vh_net_charge",
             "vl_hydrophobic_fraction",
+            "vh_aliphatic_index",
+            "fv_cdr_proline_fraction",
+            "fv_predicted_disulfide_pairs",
             "fv_cdr_aromatic_count",
             "cdr_h3_length",
             "vh_vl_charge_imbalance",
@@ -22,6 +25,9 @@ def test_feature_families_tags_expected_chemistry_and_regions():
 
     assert families.loc["vh_net_charge", "chemistry"] == "charge"
     assert families.loc["vl_hydrophobic_fraction", "chemistry"] == "hydrophobic_aromatic"
+    assert families.loc["vh_aliphatic_index", "chemistry"] == "hydrophobic_aromatic"
+    assert families.loc["fv_cdr_proline_fraction", "chemistry"] == "conformational_entropy"
+    assert families.loc["fv_predicted_disulfide_pairs", "chemistry"] == "disulfide"
     assert families.loc["fv_cdr_aromatic_count", "is_cdr"]
     assert families.loc["cdr_h3_length", "chemistry"] == "length"
     assert families.loc["vh_vl_charge_imbalance", "chemistry"] == "charge"

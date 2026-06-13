@@ -13,12 +13,22 @@ from sklearn.model_selection import GroupKFold, KFold
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.decomposition import PCA
 from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import SplineTransformer, StandardScaler
+from sklearn.svm import LinearSVR, SVR
 
 from antinetwork.killtest import ASSAY_DIRECTIONS
 
 
 DEFAULT_COMPETITIVE_MODELS = ["ridge", "random_forest", "hist_gradient_boosting"]
+TM_STRUCTURE_MODELS = [
+    "ridge",
+    "elasticnet",
+    "linear_svm",
+    "rbf_svm",
+    "gam_spline",
+    "random_forest",
+    "hist_gradient_boosting",
+]
 
 
 @dataclass(frozen=True)
@@ -54,6 +64,18 @@ def make_numeric_regression_pipeline(
             random_state=random_state,
             n_jobs=1,
         )
+    elif model_name == "linear_svm":
+        model = LinearSVR(
+            C=1.0,
+            epsilon=0.1,
+            loss="squared_epsilon_insensitive",
+            max_iter=20_000,
+            random_state=random_state,
+        )
+    elif model_name == "rbf_svm":
+        model = SVR(C=1.0, epsilon=0.1, gamma="scale")
+    elif model_name == "gam_spline":
+        model = RidgeCV(alphas=np.logspace(-3, 3, 13))
     elif model_name == "hist_gradient_boosting":
         model = HistGradientBoostingRegressor(
             learning_rate=0.05,
@@ -69,6 +91,8 @@ def make_numeric_regression_pipeline(
         ("impute", SimpleImputer(strategy="median")),
         ("scale", StandardScaler()),
     ]
+    if model_name == "gam_spline":
+        steps.append(("spline", AdaptiveSplineTransformer(n_knots=4, degree=3)))
     if pca_components is not None:
         steps.append(("pca", AdaptivePCA(n_components=pca_components, random_state=random_state)))
     steps.append(("model", model))
@@ -97,6 +121,34 @@ class AdaptivePCA(BaseEstimator, TransformerMixin):
         if self.pca_ is None:
             return x
         return self.pca_.transform(x)
+
+
+class AdaptiveSplineTransformer(BaseEstimator, TransformerMixin):
+    """Spline basis that caps knots for tiny folds/features."""
+
+    def __init__(self, n_knots: int = 4, degree: int = 3):
+        self.n_knots = n_knots
+        self.degree = degree
+
+    def fit(self, x: np.ndarray, y: np.ndarray | None = None) -> "AdaptiveSplineTransformer":
+        n_unique = min(len(np.unique(x[:, idx])) for idx in range(x.shape[1])) if x.shape[1] else 0
+        n_knots = max(2, min(self.n_knots, n_unique))
+        self.transformer_: SplineTransformer | None
+        if n_unique > 1:
+            self.transformer_ = SplineTransformer(
+                n_knots=n_knots,
+                degree=min(self.degree, n_knots - 1),
+                include_bias=False,
+            )
+            self.transformer_.fit(x)
+        else:
+            self.transformer_ = None
+        return self
+
+    def transform(self, x: np.ndarray) -> np.ndarray:
+        if self.transformer_ is None:
+            return x
+        return self.transformer_.transform(x)
 
 
 def competitive_metric_row(

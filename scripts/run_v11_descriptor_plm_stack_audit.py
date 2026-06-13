@@ -20,20 +20,23 @@ from antinetwork.plm_embeddings import (
     build_antibody_embedding_features,
     load_chain_embeddings,
 )
+from antinetwork.structure_topology import build_structure_stability_features
 
 
 AUDIT_VERSION = "external_audit_v11_descriptor_plm_stack"
-TARGET_ASSAYS = ["HIC", "PR_CHO"]
+TARGET_ASSAYS = ["HIC", "PR_CHO", "Tm2"]
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="v11 HIC/PR_CHO descriptor + PLM stack audit under the GDPa3 firewall."
+        description="v11 descriptor + PLM stack audit under the GDPa3 firewall."
     )
     parser.add_argument("--comp-dir", type=Path, default=Path("data/GinkgoComp"))
     parser.add_argument("--raw-dir", type=Path, default=Path("data/raw"))
     parser.add_argument("--embedding-dir", type=Path, default=Path("reports/plm_embeddings"))
     parser.add_argument("--out-dir", type=Path, default=Path("reports/v11_descriptor_plm_stack"))
+    parser.add_argument("--structure-train-dir", type=Path, default=Path("data/structures/GDPa1"))
+    parser.add_argument("--structure-test-dir", type=Path, default=Path("data/structures/GDPa3"))
     parser.add_argument("--gdpa1-workbook", default="GDPa1_v1.3_20251027_full.xlsx")
     parser.add_argument("--gdpa3-workbook", default="GDPa3_20260106_full.xlsx")
     parser.add_argument(
@@ -68,6 +71,23 @@ def main() -> None:
 
     train_physics = build_physical_features(train)
     test_physics = build_physical_features(test)
+    train_structure = build_structure_stability_features(
+        train,
+        structure_dir=args.structure_train_dir,
+    ).select_dtypes(include="number")
+    test_for_structures = _with_heldout_structure_names(
+        test,
+        heldout_sequences=args.comp_dir / "seqs" / "heldout-set-sequences.csv",
+    )
+    test_structure = build_structure_stability_features(
+        test_for_structures,
+        structure_dir=args.structure_test_dir,
+    ).select_dtypes(include="number")
+    train_structure, test_structure = train_structure.align(
+        test_structure,
+        join="outer",
+        axis=1,
+    )
     train_embeddings = _load_required_embeddings(args.embedding_dir, "gdpa1")
     test_embeddings = _load_required_embeddings(args.embedding_dir, "gdpa3")
     train_esm2 = build_antibody_embedding_features(train_embeddings, "esm2_t12_35M")
@@ -98,6 +118,7 @@ def main() -> None:
 
     train_feature_sets = _build_feature_sets(
         train_physics,
+        train_structure,
         train_moe,
         train_esm2,
         train_ab_roberta,
@@ -105,6 +126,7 @@ def main() -> None:
     )
     test_feature_sets = _build_feature_sets(
         test_physics,
+        test_structure,
         test_moe,
         test_esm2,
         test_ab_roberta,
@@ -179,11 +201,16 @@ def main() -> None:
         "success_conditions": {
             "HIC": "external_worst_20_auroc > 0.787",
             "PR_CHO": "external_worst_20_auroc >= 0.70 and external_spearman >= 0.25",
+            "Tm2": "experimental stability block: external_spearman >= 0.20",
         },
         "moe_feature_paths": {
             "train": str(args.moe_train),
             "test": str(args.moe_test),
             "available": moe_available,
+        },
+        "structure_feature_paths": {
+            "train": str(args.structure_train_dir),
+            "test": str(args.structure_test_dir),
         },
         "random_seed": args.seed,
     }
@@ -248,6 +275,7 @@ def load_moe_features(
 
 def _build_feature_sets(
     physics: pd.DataFrame,
+    structure: pd.DataFrame,
     moe: pd.DataFrame,
     esm2: pd.DataFrame,
     ab_roberta: pd.DataFrame,
@@ -255,6 +283,11 @@ def _build_feature_sets(
 ) -> dict[str, pd.DataFrame]:
     feature_sets: dict[str, pd.DataFrame] = {
         "physics_global": physics,
+        "structure_stability": structure,
+        "physics_plus_structure": _concat(
+            physics.add_prefix("physics__"),
+            structure.add_prefix("structure__"),
+        ),
         "esm2_35M_plus_physics": _concat(esm2, physics.add_prefix("physics__")),
         "ab_roberta_plus_physics": _concat(ab_roberta, physics.add_prefix("physics__")),
     }
@@ -263,6 +296,11 @@ def _build_feature_sets(
             {
                 "MOE": moe,
                 "MOE_plus_physics": _concat(moe, physics.add_prefix("physics__")),
+                "MOE_plus_physics_plus_structure": _concat(
+                    moe,
+                    physics.add_prefix("physics__"),
+                    structure.add_prefix("structure__"),
+                ),
                 "MOE_plus_physics_plus_esm2_35M": _concat(
                     moe,
                     physics.add_prefix("physics__"),
@@ -343,6 +381,32 @@ def _map_heldout_names_to_gdpa3(
     return mapped
 
 
+def _with_heldout_structure_names(
+    gdpa3_sequences: pd.DataFrame,
+    heldout_sequences: Path,
+) -> pd.DataFrame:
+    """Use heldout sequence names for structure lookup while preserving row order."""
+    if not heldout_sequences.exists():
+        return gdpa3_sequences
+    heldout = pd.read_csv(heldout_sequences)
+    heldout["_sequence_key"] = (
+        heldout["vh_protein_sequence"].astype(str) + "|" + heldout["vl_protein_sequence"].astype(str)
+    )
+    gdpa3 = gdpa3_sequences.copy()
+    gdpa3["_sequence_key"] = (
+        gdpa3["vh_protein_sequence"].astype(str) + "|" + gdpa3["vl_protein_sequence"].astype(str)
+    )
+    mapping = gdpa3[["_sequence_key"]].merge(
+        heldout[["antibody_name", "_sequence_key"]],
+        on="_sequence_key",
+        how="left",
+        validate="one_to_one",
+    )
+    if mapping["antibody_name"].notna().all():
+        gdpa3["antibody_name"] = mapping["antibody_name"].to_numpy()
+    return gdpa3.drop(columns=["_sequence_key"])
+
+
 def _comparison_table(internal: pd.DataFrame, external: pd.DataFrame) -> pd.DataFrame:
     left = internal[
         [
@@ -388,7 +452,8 @@ def _beats_anchor(comparison: pd.DataFrame) -> pd.Series:
         & (comparison["external_worst_20_auroc"] >= 0.70)
         & (comparison["external_spearman"] >= 0.25)
     )
-    return hic | pr
+    tm2 = (comparison["assay"] == "Tm2") & (comparison["external_spearman"] >= 0.20)
+    return hic | pr | tm2
 
 
 if __name__ == "__main__":

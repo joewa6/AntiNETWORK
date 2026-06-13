@@ -2,8 +2,10 @@
 """Plot the headline result: internal GDPa1 CV vs external GDPa3, per assay.
 
 Reads only the aggregate summary tables in results/ (no per-antibody data). The
-figure shows that honest external evaluation collapses developability signal for
-every assay except HIC, with the published competition field ceiling marked.
+figure shows that honest external evaluation collapses most developability signal.
+HIC survives as a physicochemical signal; Tm2 is partially recoverable only after
+using a structure/framework tier audit and appears dominated by subtype/framework
+effects rather than clean Fab stability.
 
 Output: results/headline_collapse.png
 """
@@ -30,6 +32,15 @@ LABELS = {
 
 def main() -> None:
     collapse = pd.read_csv(RESULTS / "internal_vs_external_triage_comparison.csv")
+    tm2 = pd.read_csv(RESULTS / "tm2_structure_tier_summary.csv")
+    tm2_raw = tm2[(tm2["assay"] == "Tm2") & (tm2["feature_set"] == "tier2_framework_proxy")].iloc[0]
+    collapse = collapse.copy()
+    tm2_mask = collapse["assay"] == "Tm2"
+    collapse.loc[tm2_mask, "feature_set"] = tm2_raw["feature_set"]
+    collapse.loc[tm2_mask, "model"] = tm2_raw["model"]
+    collapse.loc[tm2_mask, "internal_spearman"] = tm2_raw["internal_spearman"]
+    collapse.loc[tm2_mask, "external_spearman"] = tm2_raw["external_spearman"]
+    collapse.loc[tm2_mask, "external_worst_20_auroc"] = tm2_raw["external_worst_20_auroc"]
     ceiling = pd.read_csv(RESULTS / "external_vs_field_ceiling.csv")[
         ["assay", "published_top_spearman"]
     ]
@@ -41,6 +52,7 @@ def main() -> None:
     internal_color = "#bdbdbd"
     external_color = "#4a76a8"
     survivor_color = "#2e7d32"
+    subtype_color = "#8e5ea2"
 
     fig, ax = plt.subplots(figsize=(8.2, 4.6))
 
@@ -51,7 +63,10 @@ def main() -> None:
         color=internal_color,
         label="Internal CV (GDPa1)",
     )
-    ext_colors = [survivor_color if a == "HIC" else external_color for a in df["assay"]]
+    ext_colors = [
+        survivor_color if a == "HIC" else subtype_color if a == "Tm2" else external_color
+        for a in df["assay"]
+    ]
     ax.bar(
         [i + width / 2 for i in x],
         df["external_spearman"],
@@ -76,7 +91,7 @@ def main() -> None:
     ax.set_xticklabels([LABELS.get(a, a) for a in df["assay"]], fontsize=9)
     ax.set_ylabel("Spearman rank correlation")
     ax.set_title(
-        "Honest external evaluation collapses developability signal — only HIC survives",
+        "External evaluation: HIC survives; Tm2 is mostly framework/subtype signal",
         fontsize=11,
     )
 
@@ -90,6 +105,16 @@ def main() -> None:
         ha="left",
         arrowprops=dict(arrowstyle="-", color="#2e7d32", linewidth=0.8),
         color="#2e7d32",
+    )
+    tm2_i = list(df["assay"]).index("Tm2")
+    ax.annotate(
+        "framework/subtype signal",
+        xy=(tm2_i + width / 2, df.loc[tm2_i, "external_spearman"]),
+        xytext=(tm2_i + 0.1, df.loc[tm2_i, "external_spearman"] + 0.11),
+        fontsize=8.5,
+        ha="left",
+        arrowprops=dict(arrowstyle="-", color=subtype_color, linewidth=0.8),
+        color=subtype_color,
     )
 
     ax.spines["top"].set_visible(False)

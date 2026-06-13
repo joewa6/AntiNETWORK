@@ -4,12 +4,18 @@ A leakage-controlled audit of antibody developability assays on the Ginkgo
 AbDev benchmark (GDPa1 public training set, 246 antibodies; GDPa3 blinded
 held-out set, 80 antibodies). The question it asks is which developability
 signals survive honest external evaluation once sequence-family leakage is
-controlled — not "can we build a predictor." The headline outcome is mostly
-negative, and reporting that accurately is the point of the project.
+controlled — not "can we build a predictor." The headline outcome is
+negative-leaning, and reporting that accurately is the point of the project.
 
-![Internal GDPa1 cross-validation versus external GDPa3 held-out Spearman per assay; only HIC survives external evaluation, with the published competition field ceiling marked.](results/headline_collapse.png)
+![Internal GDPa1 cross-validation versus external GDPa3 held-out Spearman per assay; HIC survives as a physicochemical signal, while the Tm2 signal is mostly framework/subtype-associated.](results/headline_collapse.png)
 
-*Per assay: internal sequence-cluster grouped cross-validation on GDPa1 versus a single prediction on the blinded GDPa3 held-out set. Signal collapses to near zero externally for every assay except HIC (Tm2's internal value is negative — anti-correlated in-fold). Black bars mark the field ceiling — the best per-assay score across the 113 competition teams. Regenerate with `python scripts/plot_headline_collapse.py`.*
+*Per assay: internal sequence-cluster grouped cross-validation on GDPa1 versus a
+single prediction on the blinded GDPa3 held-out set. HIC survives as the cleanest
+physicochemical signal. A post-hoc Tm2 structure/framework audit reaches 0.33
+external Spearman, but the signal is largely explained by heavy/light subtype
+rather than a clean Fab-stability measurement. Black bars mark the field ceiling
+— the best per-assay score across the 113 competition teams. Regenerate with
+`python scripts/plot_headline_collapse.py`.*
 
 ## Benchmark
 
@@ -28,7 +34,11 @@ same held-out set.
 
 - Crude per-chain and per-CDR physicochemical sequence features: charge,
   hydrophobicity, aromatic content, VH/VL imbalances.
-- Models: ridge, elastic-net, random forest, hist-gradient-boosting.
+- Structure-derived Fab stability features for the Tm2 follow-up: VH/VL
+  interface contacts, surface hydrophobic/electrostatic patches, CDR flexibility,
+  weak-region packing, defect proxies, and interface graph descriptors.
+- Models: ridge, elastic-net, linear/RBF SVM, spline-ridge GAM proxy, random
+  forest, hist-gradient-boosting.
 - Sequence-cluster grouped cross-validation as the internal evaluation standard.
 - An external GDPa3 firewall: train on GDPa1, predict the blinded held-out set
   once.
@@ -49,7 +59,7 @@ competition teams on the same held-out set.
 | PR_CHO  | 0.52                | 0.28           | 0.356                       |
 | AC-SINS | 0.33                | 0.13           | 0.337                       |
 | Titer   | 0.21                | 0.00           | 0.310                       |
-| Tm2     | −0.20               | ≈ 0            | 0.392                       |
+| Tm2     | 0.29                | 0.33           | 0.392                       |
 
 HIC is the one assay where the internal number holds out of distribution. On the
 same held-out split, a sequence-identity kNN baseline reaches 0.33. So physics
@@ -57,6 +67,26 @@ beats nearest-neighbour memorization by roughly 0.16 Spearman externally — the
 HIC signal is physicochemical and real, not memorization — but kNN alone reaches
 0.33, meaning roughly two-thirds of the achievable HIC rank-order is also
 recoverable from sequence similarity. That bound is part of the finding.
+
+**Tm2 is not clean Fab Tm.** The best Tm2 follow-up result is a
+framework/subtype proxy with a spline-ridge GAM-like model: GDPa1 grouped-CV
+Spearman 0.29 and GDPa3 Spearman 0.33, close to the published field ceiling of
+0.392. That does not mean the Fab-stability mechanism is solved. The AbDev
+outcomes paper notes that Tm2 reflects overlapping Fab/CH3 unfolding transitions
+in intact IgG measurements, and the assay often cannot cleanly deconvolve Fab,
+CH2, and CH3 transitions. When we subtract the GDPa1-estimated expectation
+`E[Tm2 | hc_subtype + lc_subtype]`, the best selected residual model falls to
+0.10 external Spearman. So the supported interpretation is: Tm2 contains a real
+framework/isotype component, plus only a weak and unstable residual Fab-structure
+signal.
+
+![Raw Tm2 is partly predictable from framework/subtype and structure-rich features, but the subtype residual is weak.](results/tm2_subtype_residual.png)
+
+*Post-hoc Tm2 tier audit. The raw Tm2 framework/subtype proxy reaches 0.33
+external Spearman; a sequence+structure model reaches 0.29; after subtracting
+the GDPa1-estimated subtype expectation, the best selected residual model reaches
+only 0.10. Regenerate with `python scripts/run_tm_structure_tier_audit.py` and
+`python scripts/plot_tm2_subtype_residual.py`.*
 
 **Against the field's own methods.** On the same held-out HIC split, our physics
 model (0.49) ranks 4th of 15 official competition baselines — level with the MOE
@@ -78,13 +108,12 @@ models out of distribution.
 Under firewalled evaluation, simple physicochemical features land in the same
 range as far heavier methods, because the heavier methods do not generalize
 either: the PLM embeddings improve internal cross-validation but reduce external
-performance. HIC is the only assay carrying real, leakage-robust,
-beyond-memorization signal. Every other assay collapses at the external step.
-This independently reproduces, in this pipeline, the conclusion the AbDev
-competition organizers published from their own 113-team results — that
-cross-validation overstates performance and out-of-distribution generalization
-is limited. It is not a new finding; it is independent corroboration arrived at
-with falsification controls.
+performance. HIC is the cleanest leakage-robust, beyond-memorization signal.
+PR_CHO is partial, AC-SINS/Titer remain weak, and Tm2 is best treated as a mixed
+endpoint with a large framework/subtype component. This independently
+reproduces, in this pipeline, the conclusion the AbDev competition organizers
+published from their own 113-team results — that cross-validation overstates
+performance and out-of-distribution generalization is limited.
 
 ## Status / scope of implementation
 
@@ -95,6 +124,8 @@ Implemented and load-bearing for the result above:
 - External GDPa3 firewall.
 - Falsification controls: composition-matched scramble null, label-shuffle null,
   sequence-identity kNN baseline.
+- Tm2 post-hoc tier audit: framework/subtype baseline, structure-rich stability
+  features, defect proxies, and subtype-residual evaluation.
 
 Implemented but NOT load-bearing:
 
@@ -106,9 +137,11 @@ Implemented but NOT load-bearing:
 
 ## Firewall hygiene
 
-The GDPa3 held-out labels were used only for one-time external evaluation and a
-single audit-time kNN baseline. They informed no model selection, feature
-choice, or hyperparameter tuning.
+For the original external triage and HIC result, GDPa3 held-out labels were used
+only for one-time external evaluation and a single audit-time kNN baseline. The
+Tm2 tier/residual analysis is explicitly a post-hoc mechanistic audit motivated
+by the AbDev assay paper and the observed subtype signal; within that audit,
+model selection is still performed on GDPa1 grouped CV before GDPa3 scoring.
 
 ## Data availability
 
@@ -127,7 +160,7 @@ metric tables with no per-antibody rows, sequences, or raw assay values.
 conda env create -f environment.yml
 conda activate anti
 python scripts/download_gdpa.py        # GDPa1 from Hugging Face, after `hf auth login`
-python -m pytest                       # 53 tests, no data or network required
+python -m pytest                       # 59 tests, no data or network required
 ```
 
 ### Reproduce the headline numbers
@@ -140,5 +173,6 @@ result is regenerated by one entry point; outputs are the aggregate tables under
 |----------|---------|--------|
 | HIC external ≈ 0.49; PLMs help internal, hurt external | `python scripts/run_v11_descriptor_plm_stack_audit.py` | `results/descriptor_plm_internal_vs_external.csv`, `results/external_vs_field_ceiling.csv` |
 | Internal→external collapse (PR_CHO 0.52→0.28, etc.) | `python scripts/run_external_triage_audit.py` | `results/internal_vs_external_triage_comparison.csv` |
+| Tm2 framework/subtype signal and subtype-residual collapse | `python scripts/run_tm_structure_tier_audit.py` | `results/tm2_structure_tier_summary.csv` |
 | HIC physics 0.49 beats identity-kNN 0.33 | `python scripts/knn_baseline_hic.py` | prints the comparison |
 | Topology does not beat a composition-matched null | `antinetwork.topology_falsification.run_topology_falsification_gate` (exercised by `tests/test_topology_falsification.py`) | `results/topology_gate_verdicts.csv` |
