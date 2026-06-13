@@ -7,6 +7,10 @@ signals survive honest external evaluation once sequence-family leakage is
 controlled — not "can we build a predictor." The headline outcome is mostly
 negative, and reporting that accurately is the point of the project.
 
+![Internal GDPa1 cross-validation versus external GDPa3 held-out Spearman per assay; only HIC survives external evaluation, with the published competition field ceiling marked.](results/headline_collapse.png)
+
+*Internal GDPa1 cross-validation collapses to near zero on the external GDPa3 held-out set for every assay except HIC. Black bars mark the field ceiling (best of 113 competition teams). Regenerate with `python scripts/plot_headline_collapse.py`.*
+
 ## Benchmark
 
 The Ginkgo AbDev competition (GDPa1 training set, GDPa3 held-out set) ran from
