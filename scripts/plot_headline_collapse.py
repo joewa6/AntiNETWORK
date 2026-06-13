@@ -64,7 +64,12 @@ def main() -> None:
     for i, top in zip(x, df["published_top_spearman"]):
         if pd.notna(top):
             ax.hlines(top, i - width, i + width, color="black", linewidth=1.4)
-    ax.hlines([], [], [], color="black", linewidth=1.4, label="Field ceiling (best of 113 teams)")
+    ax.hlines([], [], [], color="black", linewidth=1.4, label="Field ceiling (best of 113 teams, per assay)")
+
+    # label near-zero external bars so a measured zero reads as a result, not missing data
+    for i, ext in enumerate(df["external_spearman"]):
+        if abs(ext) < 0.03:
+            ax.text(i + width / 2, 0.012, "≈0", ha="center", va="bottom", fontsize=8, color="#555555")
 
     ax.axhline(0, color="black", linewidth=0.8)
     ax.set_xticks(list(x))

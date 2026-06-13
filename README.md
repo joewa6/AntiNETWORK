@@ -9,7 +9,7 @@ negative, and reporting that accurately is the point of the project.
 
 ![Internal GDPa1 cross-validation versus external GDPa3 held-out Spearman per assay; only HIC survives external evaluation, with the published competition field ceiling marked.](results/headline_collapse.png)
 
-*Internal GDPa1 cross-validation collapses to near zero on the external GDPa3 held-out set for every assay except HIC. Black bars mark the field ceiling (best of 113 competition teams). Regenerate with `python scripts/plot_headline_collapse.py`.*
+*Per assay: internal sequence-cluster grouped cross-validation on GDPa1 versus a single prediction on the blinded GDPa3 held-out set. Signal collapses to near zero externally for every assay except HIC (Tm2's internal value is negative — anti-correlated in-fold). Black bars mark the field ceiling — the best per-assay score across the 113 competition teams. Regenerate with `python scripts/plot_headline_collapse.py`.*
 
 ## Benchmark
 
@@ -49,7 +49,7 @@ competition teams on the same held-out set.
 | PR_CHO  | 0.52                | 0.28           | 0.356                       |
 | AC-SINS | 0.33                | 0.13           | 0.337                       |
 | Titer   | 0.21                | 0.00           | 0.310                       |
-| Tm2     | ≈ 0                 | ≈ 0            | 0.392                       |
+| Tm2     | −0.20               | ≈ 0            | 0.392                       |
 
 HIC is the one assay where the internal number holds out of distribution. On the
 same held-out split, a sequence-identity kNN baseline reaches 0.33. So physics
