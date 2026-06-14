@@ -1,0 +1,7 @@
+property,assay,n,spearman,published_top_spearman,delta_vs_published_top,status,model
+Hydrophobicity,HIC,79,0.4885729440709334,0.708,-0.21942705592906658,below_top,GDPa1_v1.3_physical_plus_metadata_full_train_ridge
+Thermostability,Tm2,74,0.2172264676501468,0.392,-0.1747735323498532,below_top,GDPa1_v1.3_physical_plus_metadata_full_train_ridge
+Polyreactivity,PR_CHO,80,0.2159087833992993,0.356,-0.14009121660070067,below_top,GDPa1_v1.3_physical_plus_metadata_full_train_ridge
+Self-association,AC-SINS_pH7.4,80,0.1298187892474228,0.337,-0.20718121075257723,below_top,GDPa1_v1.3_physical_plus_metadata_full_train_ridge
+Titer,Titer,80,-0.0303328645100797,0.31,-0.3403328645100797,below_top,GDPa1_v1.3_physical_plus_metadata_full_train_ridge
+Aggregation,SEC_%monomer,80,-0.11915422305718816,,,exploratory_no_prize_target,GDPa1_v1.3_physical_plus_metadata_full_train_ridge

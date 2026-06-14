@@ -1,0 +1,15 @@
+[project]
+name = "antinetwork"
+version = "0.1.0"
+description = "GDPa1 antibody developability exploration and network analysis utilities."
+requires-python = ">=3.11"
+dependencies = []
+
+[tool.ruff]
+line-length = 100
+src = ["src", "scripts"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+

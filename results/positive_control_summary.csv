@@ -1,0 +1,4 @@
+test,expectation,surface_composition_spearman,real_topology_spearman,scrambled_topology_spearman_mean,scrambled_topology_spearman_sd,diagnostic_delta,verdict
+positive_control_composition,surface composition ~= real topology,0.999998760888264,0.9932166888537369,0.9933675300661003,0.0003856421594633444,-0.006782072034527076,PASS
+positive_control_topology,real topology > scrambled topology,0.13741331383798205,0.9781098596086887,0.09267711650537565,0.048561923735645725,0.885432743103313,PASS
+positive_control_shuffled,all feature blocks near zero,-0.0985564353245852,-0.0027078712480742145,-0.06665097125674799,0.07906543745187988,-0.0027078712480742145,PASS

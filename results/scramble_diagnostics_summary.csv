@@ -1,0 +1,6 @@
+diagnostic,value,why_it_matters
+mean fraction of residues moved,0.889553402887623,checks scramble is not identity-ish
+mean CDR moved fraction,0.873270491213046,checks CDR null quality
+mean framework moved fraction,0.9058363145622,checks framework null quality
+antibodies with non-derangeable bins,0.0,identifies weak null cases from tiny bins
+mean real-vs-scrambled feature correlation,0.5159964525432945,detects residual topology leakage

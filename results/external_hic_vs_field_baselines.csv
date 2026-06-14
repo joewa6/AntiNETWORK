@@ -1,0 +1,16 @@
+method,heldout_hic_spearman,is_ours
+saprot_vh_vl,0.54,False
+aggrescan3d,0.535,False
+moe_baseline,0.495,False
+our_physics_descriptors,0.491,True
+esm2_tap_ridge,0.407,False
+piggen,0.406,False
+deepsp_ridge,0.404,False
+esm2_ridge,0.403,False
+ablang2_elastic_net,0.356,False
+tap_linear,0.348,False
+esm2_tap_rf,0.339,False
+onehot_ridge,0.273,False
+esm2_tap_xgb,0.197,False
+tap_single_features,0.05,False
+random_predictor,-0.191,False

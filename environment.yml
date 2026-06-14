@@ -1,0 +1,33 @@
+name: anti
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  - pip
+  - ipykernel
+  - jupyterlab
+  - numpy
+  - pandas
+  - scipy
+  - scikit-learn
+  - statsmodels
+  - matplotlib
+  - seaborn
+  - plotly
+  - networkx
+  - pyarrow
+  - openpyxl
+  - biopython
+  - tqdm
+  - pyyaml
+  - requests
+  - ipywidgets
+  - pip:
+      - datasets
+      - huggingface_hub[hf_xet]
+      - transformers>=4.40,<5
+      - fsspec
+      - umap-learn
+      - python-louvain
+      - pytest
+      - ruff
