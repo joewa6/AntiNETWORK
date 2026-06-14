@@ -1,0 +1,5 @@
+assay,feature_set,model,internal_spearman,external_spearman,external_worst_20_auroc,externally_useful,note
+Tm2,tier2_framework_proxy,gam_spline,0.2857608118606209,0.33278137925255136,0.688135593220339,True,raw Tm2 is best explained by framework/subtype proxy
+Tm2,sequence_plus_structure_all,random_forest,0.20880370881971522,0.288549256592273,0.6316384180790959,True,best structure-rich selected model
+Tm2,tier2_defects,hist_gradient_boosting,-0.028766619559841153,0.16232746876965223,0.6350282485875707,False,defect features move raw Tm2 but do not clear Spearman threshold
+Tm2_subtype_residual,tier1_cdr_flexibility,random_forest,0.14931576539994584,0.09763863486854024,0.5050847457627118,False,best GDPa1-selected residual model after subtracting subtype expectation
