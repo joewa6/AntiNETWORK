@@ -6,7 +6,9 @@ method, no per-antibody data). Shows that simple sequence physics sits upper-pac
 on the blinded GDPa3 held-out set — above every sequence-based ML baseline — so
 the internal->external collapse on other assays is not a feature-quality failure.
 
-Output: results/hic_vs_field_baselines.png
+Outputs:
+- results/hic_vs_field_baselines.png
+- results/external_hic_baseline_distribution.csv
 """
 from __future__ import annotations
 
@@ -43,28 +45,70 @@ DISPLAY = {
 def main() -> None:
     df = pd.read_csv(RESULTS / "external_hic_vs_field_baselines.csv")
     df = df.sort_values("heldout_hic_spearman", ascending=True).reset_index(drop=True)
-    field_median = float(df.loc[~df["is_ours"], "heldout_hic_spearman"].median())
+    field = df.loc[~df["is_ours"], "heldout_hic_spearman"]
+    ours = float(df.loc[df["is_ours"], "heldout_hic_spearman"].iloc[0])
+    field_median = float(field.median())
+    field_q25 = float(field.quantile(0.25))
+    field_q75 = float(field.quantile(0.75))
+    ours_rank = int((df["heldout_hic_spearman"] > ours).sum() + 1)
+
+    summary = pd.DataFrame(
+        [
+            {
+                "panel": "official_competition_baselines",
+                "n_field_baselines": int(len(field)),
+                "field_baseline_median": field_median,
+                "field_baseline_q25": field_q25,
+                "field_baseline_q75": field_q75,
+                "our_hic_spearman": ours,
+                "our_rank_in_panel": ours_rank,
+                "panel_size_including_ours": int(len(df)),
+                "competition_winner": WINNER,
+                "note": (
+                    "Distribution is over official published baselines in this panel; "
+                    "full 113-team score distribution is not redistributed here."
+                ),
+            }
+        ]
+    )
+    summary.to_csv(RESULTS / "external_hic_baseline_distribution.csv", index=False)
 
     labels = [DISPLAY.get(m, m) for m in df["method"]]
     colors = ["#2e7d32" if o else "#bdbdbd" for o in df["is_ours"]]
 
     fig, ax = plt.subplots(figsize=(8.4, 5.2))
     y = range(len(df))
+    ax.axvspan(field_q25, field_q75, color="#eeeeee", alpha=0.85, zorder=0)
     ax.barh(list(y), df["heldout_hic_spearman"], color=colors)
     ax.set_yticks(list(y))
     ax.set_yticklabels(labels, fontsize=8.5)
 
     ax.axvline(field_median, color="#888888", linestyle=":", linewidth=1.1)
-    ax.text(field_median, len(df) - 0.4, f"  field-baseline median {field_median:.2f}",
+    ax.text(field_median, len(df) - 0.4, f"  baseline median {field_median:.2f}",
             fontsize=8, color="#666666", va="top")
+    ax.text(
+        (field_q25 + field_q75) / 2,
+        len(df) - 1.0,
+        f"official-baseline IQR {field_q25:.2f}-{field_q75:.2f}",
+        fontsize=7.5,
+        color="#777777",
+        ha="center",
+        va="top",
+    )
     ax.axvline(WINNER, color="black", linestyle="--", linewidth=1.1)
     ax.text(WINNER, 0.2, f"competition winner {WINNER:.2f}  ", fontsize=8, color="black",
             ha="right", va="bottom")
 
     ours_i = df.index[df["is_ours"]][0]
-    ax.text(df.loc[ours_i, "heldout_hic_spearman"] + 0.008, ours_i,
-            f"{df.loc[ours_i, 'heldout_hic_spearman']:.2f}", va="center", fontsize=8.5,
-            color="#2e7d32", fontweight="bold")
+    ax.text(
+        df.loc[ours_i, "heldout_hic_spearman"] + 0.008,
+        ours_i,
+        f"{df.loc[ours_i, 'heldout_hic_spearman']:.2f} (rank {ours_rank}/{len(df)})",
+        va="center",
+        fontsize=8.5,
+        color="#2e7d32",
+        fontweight="bold",
+    )
 
     ax.axvline(0, color="black", linewidth=0.8)
     ax.set_xlabel("GDPa3 held-out HIC — Spearman")
@@ -81,6 +125,7 @@ def main() -> None:
     out = RESULTS / "hic_vs_field_baselines.png"
     fig.savefig(out, dpi=150)
     print(f"wrote {out}")
+    print(f"wrote {RESULTS / 'external_hic_baseline_distribution.csv'}")
 
 
 if __name__ == "__main__":

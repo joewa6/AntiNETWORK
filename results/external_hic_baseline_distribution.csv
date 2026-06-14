@@ -1,0 +1,2 @@
+panel,n_field_baselines,field_baseline_median,field_baseline_q25,field_baseline_q75,our_hic_spearman,our_rank_in_panel,panel_size_including_ours,competition_winner,note
+official_competition_baselines,14,0.3795,0.28950000000000004,0.40675,0.491,4,15,0.708,Distribution is over official published baselines in this panel; full 113-team score distribution is not redistributed here.

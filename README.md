@@ -61,17 +61,20 @@ recoverable from sequence similarity. That bound is part of the finding.
 **Against the field's own methods.** On the same held-out HIC split, our physics
 model (0.49) ranks 4th of 15 official competition baselines — level with the MOE
 descriptor baseline, above every sequence-based ML method (ESM-2 0.40, AbLang2
-0.36, DeepSP 0.40), and above the field-baseline median (0.38). The only methods
+0.36, DeepSP 0.40), and above the official-baseline median (0.38; IQR
+0.29-0.41 across the 14 published baselines plotted here). The only methods
 clearly above it use 3D structure (SaProt 0.54, Aggrescan3D 0.54), consistent
 with structure being the missing ingredient for HIC; the competition winner
-reached 0.71. So where the other assays collapse from internal CV to held-out,
-that reflects honest evaluation, not weak features: on the assay where signal
-exists, these crude descriptors are competitive with the field's deep-learning
-models out of distribution.
+reached 0.71. The full 113-team score distribution is not redistributed here, so
+the distributional comparison is limited to the official published baselines. So
+where the other assays collapse from internal CV to held-out, that reflects
+honest evaluation, not weak features: on the assay where signal exists, these
+crude descriptors are competitive with the field's deep-learning models out of
+distribution.
 
 ![Held-out HIC Spearman for our physics model against the competition's official baselines; our model ranks 4th of 15, above every sequence-based ML method and the field-baseline median, below only two structure-based methods and the competition winner.](results/hic_vs_field_baselines.png)
 
-*Our physics model versus the competition's 14 official baselines on the blinded GDPa3 held-out HIC split (data: `results/external_hic_vs_field_baselines.csv`; regenerate with `python scripts/plot_hic_vs_field_baselines.py`). The competition winner's 0.71 used predictions not released in this repository.*
+*Our physics model versus the competition's 14 official baselines on the blinded GDPa3 held-out HIC split (data: `results/external_hic_vs_field_baselines.csv`; distribution summary: `results/external_hic_baseline_distribution.csv`; regenerate with `python scripts/plot_hic_vs_field_baselines.py`). The competition winner's 0.71 used predictions not released in this repository.*
 
 ## What the audit establishes
 
