@@ -4,15 +4,15 @@ Pushing simple antibody developability models until they break.
 
 Most antibody developability models look better than they are.
 
-This project asks a deliberately unfashionable question:
+This project asks:
 
 **How far can simple, physically interpretable antibody features go before
 external validation kills them?**
 
 The aim is not to build the biggest predictor, stack embeddings, or win a
-leaderboard by accident. The aim is to test whether crude but meaningful
-descriptors - charge, hydrophobicity, aromaticity, VH/VL balance, CDR
-composition, framework/subtype effects, and simple topology proxies - carry real
+leaderboard by accident. The aim is to test whether grounded, scientifically meaningful
+descriptors: charge, hydrophobicity, aromaticity, VH/VL balance, CDR
+composition, framework/subtype effects, and simple topology proxies, carry real
 assay signal when sequence-family leakage is controlled.
 
 Some do.
@@ -28,8 +28,6 @@ signal looks good in cross-validation but collapses on GDPa3, it was probably
 not a robust developability model. It may still be biologically interesting, but
 it is not something to trust.
 
-Small models. Physical assumptions. Honest failure.
-
 ```mermaid
 flowchart LR
     A[Antibody sequences] --> B[Simple physical features]
@@ -43,7 +41,6 @@ flowchart LR
     G -->|No| I[Likely leakage / artefact / weak endpoint]
 ```
 
-This is not a model zoo. It is a failure-testing machine.
 
 ## The result in one picture
 
@@ -63,8 +60,6 @@ held-out split, close to the internal grouped-CV estimate and above a
 sequence-identity kNN baseline. That suggests the HIC signal is not just
 sequence-neighbour memorisation. It is partly encoded in basic molecular
 properties.
-
-This is the useful result.
 
 The second apparent signal is **Tm2**, but it is less clean. Raw Tm2 is partly
 predictable, but the best simple signal looks more like a framework/subtype
@@ -193,7 +188,7 @@ Implemented and load-bearing for the result above:
   sequence-identity kNN baseline.
 - Targeted Tm2 framework/subtype and structure-tier aggregate audit.
 
-Implemented but **not** load-bearing:
+Tested but **not** useful:
 
 - Structure-derived charge-topology features and the patchy-particle
   interaction-network simulator are built and unit-tested, but they do not beat a
