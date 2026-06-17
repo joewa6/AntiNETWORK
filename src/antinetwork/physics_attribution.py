@@ -31,8 +31,22 @@ def feature_families(feature_names: list[str] | pd.Index) -> pd.DataFrame:
         elif name.startswith("fv_cdr_") or name.startswith("cdr_"):
             chain_region = "cdr"
 
-        if "hydrophobic" in name or "aromatic" in name:
+        if (
+            "hydrophobic" in name
+            or "aromatic" in name
+            or "gravy" in name
+            or "aliphatic" in name
+        ):
             chemistry = "hydrophobic_aromatic"
+        elif (
+            "proline" in name
+            or "glycine" in name
+            or "flexible" in name
+            or "composition_entropy" in name
+        ):
+            chemistry = "conformational_entropy"
+        elif "cysteine" in name or "disulfide" in name:
+            chemistry = "disulfide"
         elif (
             "charge" in name
             or "positive" in name

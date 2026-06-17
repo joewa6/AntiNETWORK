@@ -5,6 +5,7 @@ from antinetwork.competitive_ranker import (
     competitive_metric_row,
     evaluate_external_ranker_predictions,
     evaluate_competitive_rankers,
+    make_numeric_regression_pipeline,
     select_best_rankers,
     train_full_ranker_predictions,
     worst_fraction_auroc,
@@ -72,6 +73,18 @@ def test_evaluate_competitive_rankers_and_select_best_runs_grouped_cv():
     assert set(result.metrics["model"]) == {"ridge", "random_forest"}
     assert best.loc[0, "assay"] == "HIC"
     assert best.loc[0, "spearman"] > 0.9
+
+
+def test_tm_structure_model_registry_builds_non_neural_models():
+    x = pd.DataFrame({"feature": np.linspace(-1, 1, 20)})
+    y = np.linspace(0, 1, 20)
+
+    for model_name in ["elasticnet", "linear_svm", "rbf_svm", "gam_spline"]:
+        estimator = make_numeric_regression_pipeline(model_name, random_state=7)
+        estimator.fit(x, y)
+        pred = estimator.predict(x)
+
+        assert pred.shape == y.shape
 
 
 def test_train_full_ranker_predictions_and_external_metrics():
